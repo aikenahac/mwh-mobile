@@ -291,7 +291,7 @@ export default function DeckDetailPage() {
         {/* Add Card Button */}
         {isOwner && (
           <Button onPress={handleCreateCard} className="w-full">
-            <PlusIcon size={20} className="text-white mr-2" />
+            <PlusIcon size={20} />
             <Text>Add Card</Text>
           </Button>
         )}

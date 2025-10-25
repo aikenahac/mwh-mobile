@@ -27,10 +27,10 @@ export default function Layout() {
     <SafeAreaView style={{ flex: 1 }} edges={["top"]}>
       <SignedIn>
         <NativeTabs>
-          <NativeTabs.Trigger name="index">
+          {/* <NativeTabs.Trigger name="index">
             <Icon src={<VectorIcon family={LucideIcon} name="house" />} />
             <Label>Home</Label>
-          </NativeTabs.Trigger>
+          </NativeTabs.Trigger> */}
           <NativeTabs.Trigger name="decks">
             <Icon src={<VectorIcon family={LucideIcon} name="layers" />} />
             <Label>Decks</Label>
