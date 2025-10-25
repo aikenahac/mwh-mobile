@@ -1,12 +1,24 @@
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { Text } from '@/components/ui/text'
-import { getDecks, type DeckWithRelations } from '@/lib/api'
+import { createDeck, getDecks, type DeckWithRelations } from '@/lib/api'
 import { useApiClient } from '@/lib/api/client'
 import * as Haptics from 'expo-haptics'
-import { useRouter } from 'expo-router'
-import { useEffect, useState } from 'react'
-import { ActivityIndicator, Pressable, ScrollView, View } from 'react-native'
+import { useFocusEffect, useRouter } from 'expo-router'
+import { useCallback, useState } from 'react'
+import { ActivityIndicator, Alert, Pressable, ScrollView, View } from 'react-native'
 
 export default function DecksPage() {
   // Initialize API client with Clerk auth
@@ -16,10 +28,16 @@ export default function DecksPage() {
   const [decks, setDecks] = useState<DeckWithRelations[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [newDeckName, setNewDeckName] = useState('')
+  const [newDeckDescription, setNewDeckDescription] = useState('')
+  const [creating, setCreating] = useState(false)
 
-  useEffect(() => {
-    loadDecks()
-  }, [])
+  // Reload decks when the screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      loadDecks()
+    }, [])
+  )
 
   async function loadDecks() {
     try {
@@ -31,6 +49,29 @@ export default function DecksPage() {
       setError(err instanceof Error ? err.message : 'Failed to load decks')
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function handleCreateDeck() {
+    if (!newDeckName.trim()) {
+      Alert.alert('Error', 'Please enter a deck name')
+      return
+    }
+
+    try {
+      setCreating(true)
+      const newDeck = await createDeck({
+        name: newDeckName,
+        description: newDeckDescription || undefined,
+      })
+      setNewDeckName('')
+      setNewDeckDescription('')
+      await loadDecks()
+      router.push(`/(home)/decks/${newDeck.id}`)
+    } catch (err) {
+      Alert.alert('Error', err instanceof Error ? err.message : 'Failed to create deck')
+    } finally {
+      setCreating(false)
     }
   }
 
@@ -71,9 +112,61 @@ export default function DecksPage() {
               {decks.length} {decks.length === 1 ? 'deck' : 'decks'}
             </Text>
           </View>
-          <Button size="lg">
-            <Text>New Deck</Text>
-          </Button>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button size="lg">
+                <Text>New Deck</Text>
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="w-full max-w-md">
+              <DialogHeader>
+                <DialogTitle>Create New Deck</DialogTitle>
+                <DialogDescription>
+                  Create a new deck to organize your cards
+                </DialogDescription>
+              </DialogHeader>
+              <View className="gap-4 py-4">
+                <View className="gap-2">
+                  <Label nativeID="name">Deck Name</Label>
+                  <Input
+                    value={newDeckName}
+                    onChangeText={setNewDeckName}
+                    placeholder="Enter deck name"
+                    aria-labelledby="name"
+                  />
+                </View>
+                <View className="gap-2">
+                  <Label nativeID="description">Description</Label>
+                  <Input
+                    value={newDeckDescription}
+                    onChangeText={setNewDeckDescription}
+                    placeholder="Enter description (optional)"
+                    aria-labelledby="description"
+                    multiline
+                    numberOfLines={3}
+                  />
+                </View>
+              </View>
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button
+                    variant="outline"
+                    onPress={() => {
+                      setNewDeckName('')
+                      setNewDeckDescription('')
+                    }}
+                  >
+                    <Text>Cancel</Text>
+                  </Button>
+                </DialogClose>
+                <DialogClose asChild>
+                  <Button onPress={handleCreateDeck} disabled={creating}>
+                    <Text>{creating ? 'Creating...' : 'Create'}</Text>
+                  </Button>
+                </DialogClose>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </View>
 
         {decks.length === 0 ? (
@@ -91,7 +184,6 @@ export default function DecksPage() {
                 if (process.env.EXPO_OS === 'ios') {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
                 }
-                console.log(`Navigating to deck ${deck.id}`)
                 router.push(`/(home)/decks/${deck.id}`)
               }}
               className="active:opacity-80"

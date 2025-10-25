@@ -1,4 +1,5 @@
 import { Stack } from 'expo-router';
+import { View } from 'react-native';
 
 export default function DecksLayout() {
   return (
@@ -15,7 +16,8 @@ export default function DecksLayout() {
           headerShown: true,
           headerTitle: '',
           headerBackTitle: 'Decks',
-          presentation: 'card'
+          presentation: 'card',
+          headerBackground: () => <View className="bg-background flex-1" />,
         }}
       />
     </Stack>

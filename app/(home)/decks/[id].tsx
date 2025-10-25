@@ -1,4 +1,5 @@
 import { MWHCard } from "@/components/mwh-card";
+import { ShareDeckDialog } from "@/components/share-deck-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -23,7 +24,7 @@ import { Text } from "@/components/ui/text";
 import { useApiClient } from "@/lib/api/client";
 import { deleteDeck, getDeck, updateDeck } from "@/lib/api/decks";
 import { DeckWithRelations } from "@/lib/api/schemas";
-import { PencilIcon, ShareIcon, TrashIcon } from "@/lib/icons";
+import { PencilIcon, TrashIcon } from "@/lib/icons";
 import { useUser } from "@clerk/clerk-expo";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
@@ -214,9 +215,11 @@ export default function DeckDetailPage() {
                     </DialogFooter>
                   </DialogContent>
                 </Dialog>
-                <Button variant="outline" size="icon" onPress={() => {}}>
-                  <ShareIcon size={20} className="text-foreground" />
-                </Button>
+                <ShareDeckDialog
+                  deckId={deck.id}
+                  shares={deck.shares}
+                  onSharesUpdate={loadDeck}
+                />
                 <Button variant="destructive" size="icon" onPress={handleDelete}>
                   <TrashIcon size={20} className="text-white" />
                 </Button>
