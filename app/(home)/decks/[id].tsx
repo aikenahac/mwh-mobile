@@ -23,17 +23,19 @@ import { Label } from "@/components/ui/label";
 import { Text } from "@/components/ui/text";
 import { useApiClient } from "@/lib/api/client";
 import { deleteDeck, getDeck, updateDeck } from "@/lib/api/decks";
-import { DeckWithRelations } from "@/lib/api/schemas";
-import { PencilIcon, TrashIcon } from "@/lib/icons";
+import { Card as CardType, DeckWithRelations } from "@/lib/api/schemas";
+import { BOTTOM_PADDING_OFFSET } from "@/lib/constants";
+import { PencilIcon, PlusIcon, TrashIcon } from "@/lib/icons";
 import { useUser } from "@clerk/clerk-expo";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   ScrollView,
   View
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function DeckDetailPage() {
   // Initialize API client with Clerk auth
@@ -42,6 +44,7 @@ export default function DeckDetailPage() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { user } = useUser();
+  const insets = useSafeAreaInsets();
 
   const [deck, setDeck] = useState<DeckWithRelations | null>(null);
   const [loading, setLoading] = useState(true);
@@ -49,6 +52,7 @@ export default function DeckDetailPage() {
   const [editName, setEditName] = useState("");
   const [editDescription, setEditDescription] = useState("");
   const [saving, setSaving] = useState(false);
+  const isInitialMount = useRef(true);
 
   const loadDeck = useCallback(async () => {
     try {
@@ -70,6 +74,22 @@ export default function DeckDetailPage() {
       loadDeck();
     }
   }, [id, loadDeck]);
+
+  // Reload deck when screen comes into focus (after creating/editing cards)
+  useFocusEffect(
+    useCallback(() => {
+      // Skip the initial mount (already handled by useEffect)
+      if (isInitialMount.current) {
+        isInitialMount.current = false;
+        return;
+      }
+
+      // Reload deck when coming back from card editor
+      if (id) {
+        loadDeck();
+      }
+    }, [id, loadDeck])
+  );
 
   async function handleSave() {
     if (!deck) return;
@@ -118,6 +138,27 @@ export default function DeckDetailPage() {
     );
   }
 
+  function handleCreateCard() {
+    router.push({
+      pathname: "/(home)/decks/edit-card",
+      params: { deckId: deck!.id },
+    });
+  }
+
+  function handleEditCard(card: CardType) {
+    if (!isOwner) return;
+    router.push({
+      pathname: "/(home)/decks/edit-card",
+      params: {
+        deckId: deck!.id,
+        cardId: card.id,
+        cardText: card.text,
+        cardType: card.type,
+        cardPick: card.pick.toString(),
+      },
+    });
+  }
+
   const isOwner = deck?.user_id === user?.id;
   const blackCards = deck?.cards.filter((c) => c.type === "black") || [];
   const whiteCards = deck?.cards.filter((c) => c.type === "white") || [];
@@ -150,7 +191,10 @@ export default function DeckDetailPage() {
   }
 
   return (
-    <ScrollView className="flex-1 bg-background">
+    <ScrollView
+      className="flex-1 bg-background"
+      contentContainerStyle={{ paddingBottom: insets.bottom + BOTTOM_PADDING_OFFSET }}
+    >
       <View className="p-6 gap-4">
         {/* Header */}
         <View className="gap-2">
@@ -244,6 +288,14 @@ export default function DeckDetailPage() {
           </View>
         </View>
 
+        {/* Add Card Button */}
+        {isOwner && (
+          <Button onPress={handleCreateCard} className="w-full">
+            <PlusIcon size={20} className="text-white mr-2" />
+            <Text>Add Card</Text>
+          </Button>
+        )}
+
         {/* Black Cards */}
         {blackCards.length > 0 && (
           <View className="gap-3">
@@ -257,7 +309,11 @@ export default function DeckDetailPage() {
               contentContainerClassName="gap-3"
             >
               {blackCards.map((card) => (
-                <MWHCard key={card.id} card={card} />
+                <MWHCard
+                  key={card.id}
+                  card={card}
+                  onPress={isOwner ? () => handleEditCard(card) : undefined}
+                />
               ))}
             </ScrollView>
           </View>
@@ -276,7 +332,11 @@ export default function DeckDetailPage() {
               contentContainerClassName="gap-3"
             >
               {whiteCards.map((card) => (
-                <MWHCard key={card.id} card={card} />
+                <MWHCard
+                  key={card.id}
+                  card={card}
+                  onPress={isOwner ? () => handleEditCard(card) : undefined}
+                />
               ))}
             </ScrollView>
           </View>

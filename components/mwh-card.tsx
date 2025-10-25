@@ -1,7 +1,7 @@
-import { View } from 'react-native'
 import { Text } from '@/components/ui/text'
 import { Card } from '@/lib/api/schemas'
 import { cn } from '@/lib/utils'
+import { Pressable, View } from 'react-native'
 
 type Props = {
   creator?: boolean
@@ -11,7 +11,7 @@ type Props = {
 
 export function MWHCard({ creator, card, onPress }: Props) {
   return (
-    <View
+    <Pressable
       className={cn(
         'h-60 w-44 p-4 rounded-xl shadow-lg flex flex-col justify-between',
         card.type === 'white' ? 'bg-white' : 'bg-black',
@@ -19,7 +19,7 @@ export function MWHCard({ creator, card, onPress }: Props) {
           'active:opacity-80': !creator && onPress,
         }
       )}
-      onTouchEnd={onPress}
+      onPress={onPress}
     >
       <Text
         className={cn(
@@ -48,6 +48,6 @@ export function MWHCard({ creator, card, onPress }: Props) {
           </View>
         )}
       </View>
-    </View>
+    </Pressable>
   )
 }

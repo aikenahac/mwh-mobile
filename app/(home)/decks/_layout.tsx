@@ -20,6 +20,14 @@ export default function DecksLayout() {
           headerBackground: () => <View className="bg-background flex-1" />,
         }}
       />
+      <Stack.Screen
+        name="edit-card"
+        options={{
+          headerShown: true,
+          headerTitle: '',
+          headerBackground: () => <View className="bg-background flex-1" />,
+        }}
+      />
     </Stack>
   );
 }

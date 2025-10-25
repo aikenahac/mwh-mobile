@@ -1,0 +1,1 @@
+export const BOTTOM_PADDING_OFFSET = 32;

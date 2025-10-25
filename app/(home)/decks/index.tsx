@@ -15,16 +15,19 @@ import { Label } from '@/components/ui/label'
 import { Text } from '@/components/ui/text'
 import { createDeck, getDecks, type DeckWithRelations } from '@/lib/api'
 import { useApiClient } from '@/lib/api/client'
+import { BOTTOM_PADDING_OFFSET } from '@/lib/constants'
 import * as Haptics from 'expo-haptics'
 import { useFocusEffect, useRouter } from 'expo-router'
 import { useCallback, useState } from 'react'
 import { ActivityIndicator, Alert, Pressable, ScrollView, View } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 export default function DecksPage() {
   // Initialize API client with Clerk auth
   useApiClient()
 
   const router = useRouter()
+  const insets = useSafeAreaInsets()
   const [decks, setDecks] = useState<DeckWithRelations[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -103,7 +106,10 @@ export default function DecksPage() {
   }
 
   return (
-    <ScrollView className="flex-1 bg-background">
+    <ScrollView
+      className="flex-1 bg-background"
+      contentContainerStyle={{ paddingBottom: insets.bottom + BOTTOM_PADDING_OFFSET }}
+    >
       <View className="p-6 gap-4">
         <View className="flex-row justify-between items-center">
           <View>

@@ -1,14 +1,20 @@
 import { SignOutButton } from '@/components/sign-out-button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Text } from '@/components/ui/text'
+import { BOTTOM_PADDING_OFFSET } from '@/lib/constants'
 import { useUser } from '@clerk/clerk-expo'
-import { View, ScrollView, Image } from 'react-native'
+import { Image, ScrollView, View } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 export default function ProfilePage() {
   const { user } = useUser()
+  const insets = useSafeAreaInsets()
 
   return (
-    <ScrollView className="flex-1 bg-background">
+    <ScrollView
+      className="flex-1 bg-background"
+      contentContainerStyle={{ paddingBottom: insets.bottom + BOTTOM_PADDING_OFFSET }}
+    >
       <View className="p-6 gap-6">
         {/* Profile Header */}
         <View className="items-center gap-4">
