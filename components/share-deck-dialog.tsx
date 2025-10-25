@@ -108,7 +108,7 @@ export function ShareDeckDialog({ deckId, shares, onSharesUpdate }: ShareDeckDia
           <ShareIcon size={20} className="text-foreground" />
         </Button>
       </DialogTrigger>
-      <DialogContent >
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>Share Deck</DialogTitle>
           <DialogDescription>

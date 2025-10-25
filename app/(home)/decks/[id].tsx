@@ -1,5 +1,6 @@
 import { MWHCard } from "@/components/mwh-card";
 import { ShareDeckDialog } from "@/components/share-deck-dialog";
+import { EditDeckDialog } from "@/components/edit-deck-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -8,21 +9,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Text } from "@/components/ui/text";
 import { useApiClient } from "@/lib/api/client";
-import { deleteDeck, getDeck, updateDeck } from "@/lib/api/decks";
+import { deleteDeck, getDeck } from "@/lib/api/decks";
 import { Card as CardType, DeckWithRelations } from "@/lib/api/schemas";
 import { BOTTOM_PADDING_OFFSET } from "@/lib/constants";
 import { PencilIcon, PlusIcon, TrashIcon } from "@/lib/icons";
@@ -49,9 +38,6 @@ export default function DeckDetailPage() {
   const [deck, setDeck] = useState<DeckWithRelations | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [editName, setEditName] = useState("");
-  const [editDescription, setEditDescription] = useState("");
-  const [saving, setSaving] = useState(false);
   const isInitialMount = useRef(true);
 
   const loadDeck = useCallback(async () => {
@@ -60,8 +46,6 @@ export default function DeckDetailPage() {
       setError(null);
       const data = await getDeck(id!);
       setDeck(data);
-      setEditName(data.name);
-      setEditDescription(data.description || "");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load deck");
     } finally {
@@ -91,25 +75,6 @@ export default function DeckDetailPage() {
     }, [id, loadDeck])
   );
 
-  async function handleSave() {
-    if (!deck) return;
-
-    try {
-      setSaving(true);
-      await updateDeck(deck.id, {
-        name: editName,
-        description: editDescription || undefined,
-      });
-      await loadDeck();
-    } catch (err) {
-      Alert.alert(
-        "Error",
-        err instanceof Error ? err.message : "Failed to update deck",
-      );
-    } finally {
-      setSaving(false);
-    }
-  }
 
   async function handleDelete() {
     if (!deck) return;
@@ -204,61 +169,10 @@ export default function DeckDetailPage() {
             </Text>
             {isOwner && (
               <View className="flex-row gap-2">
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button variant="outline" size="icon">
-                      <PencilIcon size={20} className="text-foreground" />
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="w-full max-w-md">
-                    <DialogHeader>
-                      <DialogTitle>Edit Deck</DialogTitle>
-                      <DialogDescription>
-                        Update your deck&apos;s name and description
-                      </DialogDescription>
-                    </DialogHeader>
-                    <View className="gap-4 py-4">
-                      <View className="gap-2">
-                        <Label nativeID="name">Deck Name</Label>
-                        <Input
-                          value={editName}
-                          onChangeText={setEditName}
-                          placeholder="Enter deck name"
-                          aria-labelledby="name"
-                        />
-                      </View>
-                      <View className="gap-2">
-                        <Label nativeID="description">Description</Label>
-                        <Input
-                          value={editDescription}
-                          onChangeText={setEditDescription}
-                          placeholder="Enter description (optional)"
-                          aria-labelledby="description"
-                          multiline
-                          numberOfLines={3}
-                        />
-                      </View>
-                    </View>
-                    <DialogFooter>
-                      <DialogClose asChild>
-                        <Button
-                          variant="outline"
-                          onPress={() => {
-                            setEditName(deck.name);
-                            setEditDescription(deck.description || "");
-                          }}
-                        >
-                          <Text>Cancel</Text>
-                        </Button>
-                      </DialogClose>
-                      <DialogClose asChild>
-                        <Button onPress={handleSave} disabled={saving}>
-                          <Text>{saving ? "Saving..." : "Save"}</Text>
-                        </Button>
-                      </DialogClose>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
+                <EditDeckDialog
+                  deck={deck}
+                  onDeckUpdated={loadDeck}
+                />
                 <ShareDeckDialog
                   deckId={deck.id}
                   shares={deck.shares}

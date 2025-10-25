@@ -65,6 +65,7 @@ function DialogContent({
             Platform.select({
               web: 'animate-in fade-in-0 zoom-in-95 duration-200',
             }),
+            "w-[85vw]",
             className
           )}
           {...props}>
@@ -138,5 +139,6 @@ export {
   DialogOverlay,
   DialogPortal,
   DialogTitle,
-  DialogTrigger,
+  DialogTrigger
 };
+

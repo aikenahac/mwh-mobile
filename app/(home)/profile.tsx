@@ -1,21 +1,9 @@
 import { SignOutButton } from '@/components/sign-out-button'
-import { Button } from '@/components/ui/button'
+import { EditProfileDialog } from '@/components/edit-profile-dialog'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Text } from '@/components/ui/text'
 import { BOTTOM_PADDING_OFFSET } from '@/lib/constants'
-import { CameraIcon, PencilIcon } from '@/lib/icons'
+import { CameraIcon } from '@/lib/icons'
 import { useUser } from '@clerk/clerk-expo'
 import * as ImagePicker from 'expo-image-picker'
 import { useState } from 'react'
@@ -25,30 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 export default function ProfilePage() {
   const { user } = useUser()
   const insets = useSafeAreaInsets()
-  const [firstName, setFirstName] = useState(user?.firstName || '')
-  const [lastName, setLastName] = useState(user?.lastName || '')
-  const [username, setUsername] = useState(user?.username || '')
-  const [updating, setUpdating] = useState(false)
   const [uploadingImage, setUploadingImage] = useState(false)
-
-  async function handleUpdateProfile() {
-    if (!user) return
-
-    try {
-      setUpdating(true)
-      await user.update({
-        firstName: firstName || undefined,
-        lastName: lastName || undefined,
-        username: username || undefined,
-      })
-      Alert.alert('Success', 'Profile updated successfully')
-    } catch (error) {
-      console.error('Failed to update profile:', error)
-      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to update profile')
-    } finally {
-      setUpdating(false)
-    }
-  }
 
   async function handleImagePick() {
     if (!user) return
@@ -153,69 +118,7 @@ export default function ProfilePage() {
                 <CardTitle>Account Information</CardTitle>
                 <CardDescription>Your account details</CardDescription>
               </View>
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="icon">
-                    <PencilIcon size={20} className="text-foreground" />
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="w-full max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>Edit Profile</DialogTitle>
-                    <DialogDescription>
-                      Update your profile information
-                    </DialogDescription>
-                  </DialogHeader>
-                  <View className="gap-4 py-4">
-                    <View className="gap-2">
-                      <Label nativeID="firstName">First Name</Label>
-                      <Input
-                        value={firstName}
-                        onChangeText={setFirstName}
-                        placeholder="Enter first name"
-                        aria-labelledby="firstName"
-                      />
-                    </View>
-                    <View className="gap-2">
-                      <Label nativeID="lastName">Last Name</Label>
-                      <Input
-                        value={lastName}
-                        onChangeText={setLastName}
-                        placeholder="Enter last name"
-                        aria-labelledby="lastName"
-                      />
-                    </View>
-                    <View className="gap-2">
-                      <Label nativeID="username">Username</Label>
-                      <Input
-                        value={username}
-                        onChangeText={setUsername}
-                        placeholder="Enter username"
-                        aria-labelledby="username"
-                      />
-                    </View>
-                  </View>
-                  <DialogFooter>
-                    <DialogClose asChild>
-                      <Button
-                        variant="outline"
-                        onPress={() => {
-                          setFirstName(user?.firstName || '')
-                          setLastName(user?.lastName || '')
-                          setUsername(user?.username || '')
-                        }}
-                      >
-                        <Text>Cancel</Text>
-                      </Button>
-                    </DialogClose>
-                    <DialogClose asChild>
-                      <Button onPress={handleUpdateProfile} disabled={updating}>
-                        <Text>{updating ? 'Saving...' : 'Save'}</Text>
-                      </Button>
-                    </DialogClose>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
+              <EditProfileDialog />
             </View>
           </CardHeader>
           <CardContent className="gap-4">

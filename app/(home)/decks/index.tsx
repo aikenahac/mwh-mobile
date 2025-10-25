@@ -1,25 +1,14 @@
-import { Button } from '@/components/ui/button'
+import { CreateDeckDialog } from '@/components/create-deck-dialog'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { Button } from '@/components/ui/button'
 import { Text } from '@/components/ui/text'
-import { createDeck, getDecks, type DeckWithRelations } from '@/lib/api'
+import { getDecks, type DeckWithRelations } from '@/lib/api'
 import { useApiClient } from '@/lib/api/client'
 import { BOTTOM_PADDING_OFFSET } from '@/lib/constants'
 import * as Haptics from 'expo-haptics'
 import { useFocusEffect, useRouter } from 'expo-router'
 import { useCallback, useState } from 'react'
-import { ActivityIndicator, Alert, Pressable, ScrollView, View } from 'react-native'
+import { ActivityIndicator, Pressable, ScrollView, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 export default function DecksPage() {
@@ -31,9 +20,6 @@ export default function DecksPage() {
   const [decks, setDecks] = useState<DeckWithRelations[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [newDeckName, setNewDeckName] = useState('')
-  const [newDeckDescription, setNewDeckDescription] = useState('')
-  const [creating, setCreating] = useState(false)
 
   // Reload decks when the screen comes into focus
   useFocusEffect(
@@ -55,27 +41,9 @@ export default function DecksPage() {
     }
   }
 
-  async function handleCreateDeck() {
-    if (!newDeckName.trim()) {
-      Alert.alert('Error', 'Please enter a deck name')
-      return
-    }
-
-    try {
-      setCreating(true)
-      const newDeck = await createDeck({
-        name: newDeckName,
-        description: newDeckDescription || undefined,
-      })
-      setNewDeckName('')
-      setNewDeckDescription('')
-      await loadDecks()
-      router.push(`/(home)/decks/${newDeck.id}`)
-    } catch (err) {
-      Alert.alert('Error', err instanceof Error ? err.message : 'Failed to create deck')
-    } finally {
-      setCreating(false)
-    }
+  function handleDeckCreated(newDeck: DeckWithRelations) {
+    loadDecks()
+    router.push(`/(home)/decks/${newDeck.id}`)
   }
 
   if (loading) {
@@ -118,61 +86,7 @@ export default function DecksPage() {
               {decks.length} {decks.length === 1 ? 'deck' : 'decks'}
             </Text>
           </View>
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button size="lg">
-                <Text>New Deck</Text>
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="w-full max-w-md">
-              <DialogHeader>
-                <DialogTitle>Create New Deck</DialogTitle>
-                <DialogDescription>
-                  Create a new deck to organize your cards
-                </DialogDescription>
-              </DialogHeader>
-              <View className="gap-4 py-4">
-                <View className="gap-2">
-                  <Label nativeID="name">Deck Name</Label>
-                  <Input
-                    value={newDeckName}
-                    onChangeText={setNewDeckName}
-                    placeholder="Enter deck name"
-                    aria-labelledby="name"
-                  />
-                </View>
-                <View className="gap-2">
-                  <Label nativeID="description">Description</Label>
-                  <Input
-                    value={newDeckDescription}
-                    onChangeText={setNewDeckDescription}
-                    placeholder="Enter description (optional)"
-                    aria-labelledby="description"
-                    multiline
-                    numberOfLines={3}
-                  />
-                </View>
-              </View>
-              <DialogFooter>
-                <DialogClose asChild>
-                  <Button
-                    variant="outline"
-                    onPress={() => {
-                      setNewDeckName('')
-                      setNewDeckDescription('')
-                    }}
-                  >
-                    <Text>Cancel</Text>
-                  </Button>
-                </DialogClose>
-                <DialogClose asChild>
-                  <Button onPress={handleCreateDeck} disabled={creating}>
-                    <Text>{creating ? 'Creating...' : 'Create'}</Text>
-                  </Button>
-                </DialogClose>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          <CreateDeckDialog onDeckCreated={handleDeckCreated} />
         </View>
 
         {decks.length === 0 ? (
