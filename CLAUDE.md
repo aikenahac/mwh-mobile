@@ -141,3 +141,5 @@ The project has several untracked configuration files:
 - Tailwind/component configs
 
 Consider committing these configuration files.
+- When making UI components, always use shadcn components from react native reusables.
+- Always use lucide icons for icons

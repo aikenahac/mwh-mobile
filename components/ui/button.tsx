@@ -1,6 +1,7 @@
 import { TextClassContext } from '@/components/ui/text';
 import { cn } from '@/lib/utils';
 import { cva, type VariantProps } from 'class-variance-authority';
+import * as Haptics from 'expo-haptics';
 import { Platform, Pressable } from 'react-native';
 
 const buttonVariants = cva(
@@ -98,6 +99,12 @@ function Button({ className, variant, size, ...props }: ButtonProps) {
       <Pressable
         className={cn(props.disabled && 'opacity-50', buttonVariants({ variant, size }), className)}
         role="button"
+        onPressIn={(ev) => {
+          if (process.env.EXPO_OS === 'ios' && !props.disabled) {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          }
+          props.onPressIn?.(ev);
+        }}
         {...props}
       />
     </TextClassContext.Provider>
@@ -106,3 +113,4 @@ function Button({ className, variant, size, ...props }: ButtonProps) {
 
 export { Button, buttonTextVariants, buttonVariants };
 export type { ButtonProps };
+

@@ -3,13 +3,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Text } from '@/components/ui/text'
 import { getDecks, type DeckWithRelations } from '@/lib/api'
 import { useApiClient } from '@/lib/api/client'
+import * as Haptics from 'expo-haptics'
+import { useRouter } from 'expo-router'
 import { useEffect, useState } from 'react'
-import { ActivityIndicator, ScrollView, View } from 'react-native'
+import { ActivityIndicator, Pressable, ScrollView, View } from 'react-native'
 
 export default function DecksPage() {
   // Initialize API client with Clerk auth
   useApiClient()
 
+  const router = useRouter()
   const [decks, setDecks] = useState<DeckWithRelations[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -82,25 +85,37 @@ export default function DecksPage() {
           </Card>
         ) : (
           decks.map((deck) => (
-            <Card key={deck.id} className="w-full">
-              <CardHeader>
-                <CardTitle>{deck.name}</CardTitle>
-                {deck.description && (
-                  <CardDescription>{deck.description}</CardDescription>
-                )}
-              </CardHeader>
-              <CardContent className="gap-2">
-                <Text className="text-sm text-muted-foreground">
-                  {deck.cards.length} cards
-                </Text>
-                {deck.shares.length > 0 && (
+            <Pressable
+              key={deck.id}
+              onPress={() => {
+                if (process.env.EXPO_OS === 'ios') {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+                }
+                console.log(`Navigating to deck ${deck.id}`)
+                router.push(`/(home)/decks/${deck.id}`)
+              }}
+              className="active:opacity-80"
+            >
+              <Card className="w-full">
+                <CardHeader>
+                  <CardTitle>{deck.name}</CardTitle>
+                  {deck.description && (
+                    <CardDescription>{deck.description}</CardDescription>
+                  )}
+                </CardHeader>
+                <CardContent className="gap-2">
                   <Text className="text-sm text-muted-foreground">
-                    Shared with {deck.shares.length}{' '}
-                    {deck.shares.length === 1 ? 'person' : 'people'}
+                    {deck.cards.length} cards
                   </Text>
-                )}
-              </CardContent>
-            </Card>
+                  {deck.shares.length > 0 && (
+                    <Text className="text-sm text-muted-foreground">
+                      Shared with {deck.shares.length}{' '}
+                      {deck.shares.length === 1 ? 'person' : 'people'}
+                    </Text>
+                  )}
+                </CardContent>
+              </Card>
+            </Pressable>
           ))
         )}
       </View>
