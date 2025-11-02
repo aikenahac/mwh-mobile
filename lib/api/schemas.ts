@@ -28,12 +28,12 @@ export const updateCardSchema = z.object({
 
 // Share schemas
 export const shareSchema = z.object({
-  id: z.string().uuid(),
-  deck_id: z.string().uuid(),
+  id: z.string(),
+  deck_id: z.string(),
   shared_with_user_id: z.string(),
   shared_by_user_id: z.string(),
   permission: permissionSchema,
-  created_at: z.string().datetime(),
+  created_at: z.string(),
 })
 
 export const createShareSchema = z.object({
@@ -54,9 +54,14 @@ export const deckSchema = z.object({
   created_at: z.string().datetime(),
 })
 
-export const deckWithRelationsSchema = deckSchema.extend({
+export const deckWithRelationsSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  description: z.string().nullable(),
+  user_id: z.string(),
+  created_at: z.string().datetime(),
   cards: z.array(cardSchema),
-  shares: z.array(shareSchema),
+  shares: z.array(shareSchema).nullish(),
 })
 
 export const createDeckSchema = z.object({
@@ -81,7 +86,7 @@ export const apiErrorSchema = z.object({
   error: z.object({
     message: z.string(),
     code: z.string(),
-    details: z.record(z.unknown()).optional(),
+    details: z.record(z.string(), z.unknown()).optional(),
   }),
 })
 

@@ -1,4 +1,4 @@
-import type { DeckWithRelations } from '@/lib/api';
+import type { Deck } from '@/lib/api';
 import { createDeck } from '@/lib/api';
 import { useState } from 'react';
 import { Alert, View } from 'react-native';
@@ -20,7 +20,7 @@ import { Text } from './ui/text';
 type Props = {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
-  onDeckCreated?: (deck: DeckWithRelations) => void;
+  onDeckCreated?: (deck: Deck) => void;
 };
 
 export function CreateDeckDialog({ open, onOpenChange, onDeckCreated }: Props) {
@@ -42,7 +42,7 @@ export function CreateDeckDialog({ open, onOpenChange, onDeckCreated }: Props) {
       });
       setNewDeckName('');
       setNewDeckDescription('');
-      onDeckCreated?.({ ...newDeck, cards: [], shares: [] });
+      onDeckCreated?.(newDeck);
       onOpenChange?.(false);
     } catch (err) {
       Alert.alert('Error', err instanceof Error ? err.message : 'Failed to create deck');

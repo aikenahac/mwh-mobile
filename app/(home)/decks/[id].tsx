@@ -1,6 +1,6 @@
+import { EditDeckDialog } from "@/components/edit-deck-dialog";
 import { MWHCard } from "@/components/mwh-card";
 import { ShareDeckDialog } from "@/components/share-deck-dialog";
-import { EditDeckDialog } from "@/components/edit-deck-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -10,11 +10,12 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Text } from "@/components/ui/text";
+import { ViewSharesDialog } from "@/components/view-shares-dialog";
 import { useApiClient } from "@/lib/api/client";
 import { deleteDeck, getDeck } from "@/lib/api/decks";
 import { Card as CardType, DeckWithRelations } from "@/lib/api/schemas";
 import { BOTTOM_PADDING_OFFSET } from "@/lib/constants";
-import { PencilIcon, PlusIcon, TrashIcon } from "@/lib/icons";
+import { PlusIcon, TrashIcon } from "@/lib/icons";
 import { useUser } from "@clerk/clerk-expo";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -45,6 +46,7 @@ export default function DeckDetailPage() {
       setLoading(true);
       setError(null);
       const data = await getDeck(id!);
+      console.log("Loaded deck:", data);
       setDeck(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load deck");
@@ -194,11 +196,7 @@ export default function DeckDetailPage() {
             <Text className="text-sm text-muted-foreground">
               {deck.cards.length} card{deck.cards.length !== 1 ? "s" : ""}
             </Text>
-            {deck.shares.length > 0 && (
-              <Text className="text-sm text-muted-foreground">
-                Shared with {deck.shares.length}
-              </Text>
-            )}
+            <ViewSharesDialog shares={deck.shares} shareCount={deck.shares.length} />
           </View>
         </View>
 

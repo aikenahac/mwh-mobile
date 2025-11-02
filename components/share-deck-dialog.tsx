@@ -58,6 +58,7 @@ export function ShareDeckDialog({ deckId, shares, onSharesUpdate }: ShareDeckDia
       setOpen(false);
       onSharesUpdate();
     } catch (err) {
+      console.log(err);
       Alert.alert("Error", err instanceof Error ? err.message : "Failed to share deck");
     } finally {
       setIsSubmitting(false);

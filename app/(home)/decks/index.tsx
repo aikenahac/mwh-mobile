@@ -1,8 +1,8 @@
 import { CreateDeckDialog } from '@/components/create-deck-dialog'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Text } from '@/components/ui/text'
-import { getDecks, type DeckWithRelations } from '@/lib/api'
+import { getDecks, type Deck, type DeckWithRelations } from '@/lib/api'
 import { useApiClient } from '@/lib/api/client'
 import { BOTTOM_PADDING_OFFSET } from '@/lib/constants'
 import * as Haptics from 'expo-haptics'
@@ -41,7 +41,8 @@ export default function DecksPage() {
     }
   }
 
-  function handleDeckCreated(newDeck: DeckWithRelations) {
+  function handleDeckCreated(newDeck: Deck) {
+    // Reload the decks list and navigate to the new deck
     loadDecks()
     router.push(`/(home)/decks/${newDeck.id}`)
   }

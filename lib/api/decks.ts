@@ -1,14 +1,14 @@
 import { z } from 'zod'
 import api from './client'
 import {
-  Deck,
-  DeckWithRelations,
-  CreateDeck,
-  UpdateDeck,
   ApiResponse,
-  deckSchema,
-  deckWithRelationsSchema,
   apiResponseSchema,
+  CreateDeck,
+  Deck,
+  deckSchema,
+  DeckWithRelations,
+  deckWithRelationsSchema,
+  UpdateDeck,
 } from './schemas'
 
 /**
@@ -31,6 +31,7 @@ export async function getDecks(): Promise<DeckWithRelations[]> {
  */
 export async function getDeck(id: string): Promise<DeckWithRelations> {
   const response = await api.get<ApiResponse<DeckWithRelations>>(`/decks/${id}`)
+  console.log("API response for getDeck:", JSON.stringify(response.data));
 
   const parsed = apiResponseSchema(deckWithRelationsSchema).parse(response.data)
 
