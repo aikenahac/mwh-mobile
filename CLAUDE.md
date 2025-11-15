@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a React Native mobile application built with Expo (SDK 54) targeting iOS, Android, and Web platforms. The app is named "mwh" (bundle ID: `com.gomwh.app`) and uses Expo Router for file-based navigation with the new architecture enabled.
+This is a React Native mobile application built with Expo (SDK 54) targeting iOS, Android, and Web platforms. The app is named "mwh" (bundle ID: `com.gomwh.mobile`) and uses Expo Router for file-based navigation with the new architecture enabled.
 
 **Key Technologies:**
 - Expo Router (v6) with typed routes and React Compiler experimental features
@@ -143,3 +143,4 @@ The project has several untracked configuration files:
 Consider committing these configuration files.
 - When making UI components, always use shadcn components from react native reusables.
 - Always use lucide icons for icons
+- This project uses npm
