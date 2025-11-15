@@ -13,6 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 const glyphMap = {
   house: 0xe0f5, // home icon
   layers: 0xe52d,
+  'gamepad-2': 0xe0df, // gamepad-2 icon
   user: 0xe19f,
 };
 
@@ -34,6 +35,10 @@ export default function Layout() {
           <NativeTabs.Trigger name="decks">
             <Icon src={<VectorIcon family={LucideIcon} name="layers" />} />
             <Label>Decks</Label>
+          </NativeTabs.Trigger>
+          <NativeTabs.Trigger name="games">
+            <Icon src={<VectorIcon family={LucideIcon} name="gamepad-2" />} />
+            <Label>Games</Label>
           </NativeTabs.Trigger>
           <NativeTabs.Trigger name="profile">
             <Icon src={<VectorIcon family={LucideIcon} name="user" />} />

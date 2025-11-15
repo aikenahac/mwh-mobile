@@ -28,6 +28,7 @@
     "expo": "~54.0.13",
     "expo-auth-session": "~7.0.8",
     "expo-build-properties": "^1.0.9",
+    "expo-clipboard": "~8.0.7",
     "expo-constants": "~18.0.9",
     "expo-crypto": "~15.0.7",
     "expo-dev-client": "~6.0.16",
@@ -58,6 +59,7 @@
     "react-native-svg": "^15.14.0",
     "react-native-web": "~0.21.0",
     "react-native-worklets": "0.5.1",
+    "socket.io-client": "^4.8.1",
     "tailwind-merge": "^3.3.1",
     "tailwindcss-animate": "^1.0.7",
     "zod": "^4.1.12"
