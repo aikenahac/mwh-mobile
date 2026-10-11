@@ -1,173 +1,216 @@
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Separator } from '@/components/ui/separator'
-import { Text } from '@/components/ui/text'
-import { useOAuth, useSignUp } from '@clerk/clerk-expo'
-import { Link, useRouter } from 'expo-router'
-import * as WebBrowser from 'expo-web-browser'
-import * as React from 'react'
-import { View } from 'react-native'
-
-// Warm up the browser for OAuth
-WebBrowser.maybeCompleteAuthSession()
+import OAuthButton from "@/components/oauth-button";
+import { ScreenContainer } from "@/components/screen-container";
+import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { OtpInput } from "@/components/ui/otp-input";
+import { Separator } from "@/components/ui/separator";
+import { Text } from "@/components/ui/text";
+import { useColorScheme } from "@/hooks/use-color-scheme.web";
+import { isValidEmail } from "@/lib/utils";
+import { useSignUp } from "@clerk/clerk-expo";
+import { Link, useRouter } from "expo-router";
+import { Mail } from "lucide-react-native";
+import * as React from "react";
+import { useState } from "react";
+import { Alert, Image, Linking, Platform, View } from "react-native";
 
 export default function SignUpScreen() {
-  const { isLoaded, signUp, setActive } = useSignUp()
-  const { startOAuthFlow } = useOAuth({ strategy: 'oauth_google' })
-  const router = useRouter()
+  const { isLoaded, signUp, setActive } = useSignUp();
+  const router = useRouter();
 
-  const [emailAddress, setEmailAddress] = React.useState('')
-  const [password, setPassword] = React.useState('')
-  const [pendingVerification, setPendingVerification] = React.useState(false)
-  const [code, setCode] = React.useState('')
+  const [emailAddress, setEmailAddress] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
-  // Handle Google OAuth sign-up
-  const onGoogleSignUp = React.useCallback(async () => {
-    try {
-      const { createdSessionId, setActive: oAuthSetActive } = await startOAuthFlow()
+  const [pendingVerification, setPendingVerification] = useState(false);
+  const [code, setCode] = useState("");
 
-      if (createdSessionId && oAuthSetActive) {
-        await oAuthSetActive({ session: createdSessionId })
-        router.replace('/')
-      }
-    } catch (err) {
-      console.error('OAuth error', JSON.stringify(err, null, 2))
-    }
-  }, [startOAuthFlow, router])
+  const colorScheme = useColorScheme();
 
-  // Handle submission of sign-up form
   const onSignUpPress = async () => {
-    if (!isLoaded) return
+    if (!isLoaded) return;
 
-    // Start sign-up process using email and password provided
+    if (
+      emailAddress.length === 0 ||
+      password.length === 0 ||
+      confirmPassword.length === 0
+    ) {
+      Alert.alert("Error", "Please enter all details");
+      return;
+    }
+
+    if (!isValidEmail(emailAddress)) {
+      Alert.alert("Error", "Please enter a valid email address");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      Alert.alert("Error", "Passwords don't match");
+      return;
+    }
+
     try {
       await signUp.create({
         emailAddress,
         password,
-      })
+      });
 
-      // Send user an email with verification code
-      await signUp.prepareEmailAddressVerification({ strategy: 'email_code' })
+      await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
 
-      // Set 'pendingVerification' to true to display second form
-      // and capture OTP code
-      setPendingVerification(true)
-    } catch (err) {
+      setPendingVerification(true);
+    } catch (err: any) {
       // See https://clerk.com/docs/custom-flows/error-handling
       // for more info on error handling
-      console.error(JSON.stringify(err, null, 2))
+      console.error(JSON.stringify(err, null, 2));
+      Alert.alert("Error", err?.errors?.[0]?.message || "Failed to sign up");
     }
-  }
+  };
 
-  // Handle submission of verification form
   const onVerifyPress = async () => {
-    if (!isLoaded) return
+    if (!isLoaded) return;
 
     try {
-      // Use the code the user provided to attempt verification
       const signUpAttempt = await signUp.attemptEmailAddressVerification({
         code,
-      })
+      });
 
-      // If verification was completed, set the session to active
-      // and redirect the user
-      if (signUpAttempt.status === 'complete') {
-        await setActive({ session: signUpAttempt.createdSessionId })
-        router.replace('/')
+      if (signUpAttempt.status === "complete") {
+        await setActive({ session: signUpAttempt.createdSessionId });
+        router.replace("/");
       } else {
-        // If the status is not complete, check why. User may need to
-        // complete further steps.
-        console.error(JSON.stringify(signUpAttempt, null, 2))
+        console.error(JSON.stringify(signUpAttempt, null, 2));
+        Alert.alert("Error", "Verification incomplete. Please try again.");
       }
-    } catch (err) {
+    } catch (err: any) {
       // See https://clerk.com/docs/custom-flows/error-handling
       // for more info on error handling
-      console.error(JSON.stringify(err, null, 2))
+      console.error(JSON.stringify(err, null, 2));
+      Alert.alert(
+        "Error",
+        err?.errors?.[0]?.message || "Failed to verify code",
+      );
     }
-  }
+  };
+
+  const openMailApp = async () => {
+    const mailUrl = Platform.select({
+      ios: "message://",
+      android: "mailto:",
+      default: "mailto:",
+    });
+
+    try {
+      const supported = await Linking.canOpenURL(mailUrl);
+      if (supported) {
+        await Linking.openURL(mailUrl);
+      }
+    } catch (error) {
+      console.error("Error opening mail app:", error);
+    }
+  };
 
   if (pendingVerification) {
     return (
-      <View className="flex-1 justify-center items-center p-4 bg-background">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle>Verify your email</CardTitle>
-            <CardDescription>Enter the verification code sent to your email</CardDescription>
-          </CardHeader>
-          <CardContent className="gap-4">
-            <View className="gap-2">
-              <Label nativeID="code">Verification Code</Label>
-              <Input
-                value={code}
-                placeholder="Enter your verification code"
-                onChangeText={(code) => setCode(code)}
-                aria-labelledby="code"
-              />
-            </View>
-          </CardContent>
-          <CardFooter>
-            <Button onPress={onVerifyPress} className="w-full">
-              <Text>Verify</Text>
-            </Button>
-          </CardFooter>
-        </Card>
-      </View>
-    )
+      <ScreenContainer className="flex flex-col items-center w-screen h-screen justify-between">
+        <View className="h-12" />
+
+        <Image
+          source={{ uri: "splash-icon" }}
+          style={{ width: 128, height: 128 }}
+        />
+
+        <View className="my-4 w-full gap-4">
+          <Text>Please check your email for a verification code</Text>
+          <OtpInput value={code} onChange={(code) => setCode(code)} />
+          <Button onPress={openMailApp} variant="secondary">
+            <Icon as={Mail} className="text-muted-foreground" />
+            <Text>Open Mail App</Text>
+          </Button>
+        </View>
+        <View className="w-full">
+          <Button onPress={onVerifyPress} size="lg">
+            <Text>Verify</Text>
+          </Button>
+        </View>
+      </ScreenContainer>
+    );
   }
 
   return (
-    <View className="flex-1 justify-center items-center p-4 bg-background">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>Sign up</CardTitle>
-          <CardDescription>Create a new account to get started</CardDescription>
-        </CardHeader>
-        <CardContent className="gap-4">
-          <Button onPress={onGoogleSignUp} variant="outline" className="w-full">
-            <Text>Continue with Google</Text>
-          </Button>
+    <ScreenContainer className="flex flex-col items-center w-screen h-screen justify-between">
+      <View className="h-12" />
 
-          <View className="flex-row items-center gap-4">
-            <Separator className="flex-1" />
-            <Text className="text-muted-foreground text-xs">OR</Text>
-            <Separator className="flex-1" />
-          </View>
+      <Image
+        source={{ uri: "splash-icon" }}
+        style={{ width: 128, height: 128 }}
+      />
 
-          <View className="gap-2">
-            <Label nativeID="email">Email</Label>
-            <Input
-              autoCapitalize="none"
-              value={emailAddress}
-              placeholder="Enter email"
-              onChangeText={(email) => setEmailAddress(email)}
-              aria-labelledby="email"
-            />
-          </View>
-          <View className="gap-2">
-            <Label nativeID="password">Password</Label>
-            <Input
-              value={password}
-              placeholder="Enter password"
-              secureTextEntry={true}
-              onChangeText={(password) => setPassword(password)}
-              aria-labelledby="password"
-            />
-          </View>
-        </CardContent>
-        <CardFooter className="flex-col gap-3">
-          <Button onPress={onSignUpPress} className="w-full">
-            <Text>Continue</Text>
-          </Button>
-          <View className="flex-row gap-1">
-            <Text className="text-muted-foreground">Already have an account?</Text>
-            <Link href="/sign-in">
-              <Text className="text-primary">Sign in</Text>
-            </Link>
-          </View>
-        </CardFooter>
-      </Card>
-    </View>
-  )
+      <View className="w-full flex flex-row items-center justify-between gap-2">
+        <OAuthButton strategy="oauth_google">
+          <Image
+            source={{ uri: "google_icon" }}
+            style={{ width: 18, height: 18 }}
+          />
+        </OAuthButton>
+
+        <OAuthButton strategy="oauth_apple">
+          <Image
+            source={{
+              uri:
+                colorScheme === "dark" ? "apple_icon_light" : "apple_icon_dark",
+            }}
+            style={{ width: 15, height: 18 }}
+          />
+        </OAuthButton>
+      </View>
+
+      <Separator />
+
+      <View className="my-4 w-full gap-4">
+        <Text className="font-bold text-3xl">Sign Up</Text>
+        <View className="w-full gap-2">
+          <Label>Email</Label>
+          <Input
+            autoCapitalize="none"
+            value={emailAddress}
+            placeholder="Enter your email"
+            onChangeText={(emailAddress) => setEmailAddress(emailAddress)}
+          />
+        </View>
+
+        <View className="w-full gap-2">
+          <Label>Password</Label>
+          <Input
+            value={password}
+            placeholder="Create a password"
+            secureTextEntry={true}
+            onChangeText={(password) => setPassword(password)}
+          />
+        </View>
+
+        <View className="w-full gap-2">
+          <Label>Confirm Password</Label>
+          <Input
+            value={confirmPassword}
+            placeholder="Confirm your password"
+            secureTextEntry={true}
+            onChangeText={(password) => setConfirmPassword(password)}
+          />
+        </View>
+      </View>
+
+      <Button onPress={onSignUpPress} className="w-full" size="lg">
+        <Text>Continue</Text>
+      </Button>
+
+      <View className="flex flex-row gap-1">
+        <Text>Already have an account?</Text>
+        <Link href="/(auth)/sign-in">
+          <Text className="text-primary font-bold">Sign in</Text>
+        </Link>
+      </View>
+    </ScreenContainer>
+  );
 }

@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "mwh",
+    "name": "Mess With Humanity",
     "slug": "mwh",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -10,7 +10,8 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.gomwh.mobile",
+      "bundleIdentifier": "com.gomwh.app",
+      "usesAppleSignIn": true,
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       },
@@ -63,7 +64,19 @@
         }
       ],
       "expo-localization",
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-apple-authentication",
+      [
+        "expo-asset",
+        {
+          "assets": [
+            "./assets/images/icons/dark/splash-icon.png",
+            "./assets/images/icons/google_icon.png",
+            "./assets/images/icons/apple_icon_light.png",
+            "./assets/images/icons/apple_icon_dark.png"
+          ]
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

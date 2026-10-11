@@ -1,6 +1,6 @@
-import { EditDeckDialog } from "@/components/edit-deck-dialog";
+import { EditDeckDrawer } from "@/components/edit-deck-drawer";
 import { MWHCard } from "@/components/mwh-card";
-import { ShareDeckDialog } from "@/components/share-deck-dialog";
+import { ShareDeckDrawer } from "@/components/share-deck-drawer";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -10,15 +10,14 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Text } from "@/components/ui/text";
-import { ViewSharesDialog } from "@/components/view-shares-dialog";
+import { ViewSharesDrawer } from "@/components/view-shares-drawer";
 import { useApiClient } from "@/lib/api/client";
-import { deleteDeck, getDeck } from "@/lib/api/decks";
-import { Card as CardType, DeckWithRelations } from "@/lib/api/schemas";
+import { Card as CardType } from "@/lib/api/schemas";
 import { BOTTOM_PADDING_OFFSET } from "@/lib/constants";
 import { PlusIcon, TrashIcon } from "@/lib/icons";
+import { useDeck, useDeleteDeck } from "@/hooks/api/decks";
 import { useUser } from "@clerk/clerk-expo";
-import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   ActivityIndicator,
   Alert,
@@ -36,69 +35,65 @@ export default function DeckDetailPage() {
   const { user } = useUser();
   const insets = useSafeAreaInsets();
 
-  const [deck, setDeck] = useState<DeckWithRelations | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const isInitialMount = useRef(true);
+  // Use React Query to fetch deck
+  const { data: deck, isLoading: loading, error } = useDeck(id!);
+  const deleteDeckMutation = useDeleteDeck(id!);
 
-  const loadDeck = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await getDeck(id!);
-      console.log("Loaded deck:", data);
-      setDeck(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load deck");
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
+  if (loading) {
+    return (
+      <View className="flex-1 justify-center items-center bg-background">
+        <ActivityIndicator size="large" />
+        <Text className="mt-4 text-muted-foreground">Loading deck...</Text>
+      </View>
+    );
+  }
 
-  useEffect(() => {
-    if (id) {
-      loadDeck();
-    }
-  }, [id, loadDeck]);
+  if (error || (!loading && !deck)) {
+    return (
+      <View className="flex-1 justify-center items-center p-6 bg-background">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle>Error</CardTitle>
+            <CardDescription>
+              {error instanceof Error ? error.message : "Deck not found"}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button onPress={() => router.back()} className="w-full">
+              <Text>Go Back</Text>
+            </Button>
+          </CardContent>
+        </Card>
+      </View>
+    );
+  }
 
-  // Reload deck when screen comes into focus (after creating/editing cards)
-  useFocusEffect(
-    useCallback(() => {
-      // Skip the initial mount (already handled by useEffect)
-      if (isInitialMount.current) {
-        isInitialMount.current = false;
-        return;
-      }
+  // At this point, deck is guaranteed to exist
+  const isOwner = deck!.user_id === user?.id;
+  const blackCards = deck!.cards.filter((c) => c.type === "black");
+  const whiteCards = deck!.cards.filter((c) => c.type === "white");
 
-      // Reload deck when coming back from card editor
-      if (id) {
-        loadDeck();
-      }
-    }, [id, loadDeck])
-  );
-
-
-  async function handleDelete() {
-    if (!deck) return;
-
+  function handleDelete() {
     Alert.alert(
       "Delete Deck",
-      `Are you sure you want to delete "${deck.name}"? This action cannot be undone.`,
+      `Are you sure you want to delete "${deck!.name}"? This action cannot be undone.`,
       [
         { text: "Cancel", style: "cancel" },
         {
           text: "Delete",
           style: "destructive",
-          onPress: async () => {
-            try {
-              await deleteDeck(deck.id);
-              router.back();
-            } catch (err) {
-              Alert.alert(
-                "Error",
-                err instanceof Error ? err.message : "Failed to delete deck",
-              );
-            }
+          onPress: () => {
+            deleteDeckMutation.mutate(undefined, {
+              onSuccess: () => {
+                router.back();
+              },
+              onError: (err) => {
+                Alert.alert(
+                  "Error",
+                  err instanceof Error ? err.message : "Failed to delete deck",
+                );
+              },
+            });
           },
         },
       ],
@@ -126,37 +121,6 @@ export default function DeckDetailPage() {
     });
   }
 
-  const isOwner = deck?.user_id === user?.id;
-  const blackCards = deck?.cards.filter((c) => c.type === "black") || [];
-  const whiteCards = deck?.cards.filter((c) => c.type === "white") || [];
-
-  if (loading) {
-    return (
-      <View className="flex-1 justify-center items-center bg-background">
-        <ActivityIndicator size="large" />
-        <Text className="mt-4 text-muted-foreground">Loading deck...</Text>
-      </View>
-    );
-  }
-
-  if (error || !deck) {
-    return (
-      <View className="flex-1 justify-center items-center p-6 bg-background">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle>Error</CardTitle>
-            <CardDescription>{error || "Deck not found"}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button onPress={() => router.back()} className="w-full">
-              <Text>Go Back</Text>
-            </Button>
-          </CardContent>
-        </Card>
-      </View>
-    );
-  }
-
   return (
     <ScrollView
       className="flex-1 bg-background"
@@ -171,14 +135,10 @@ export default function DeckDetailPage() {
             </Text>
             {isOwner && (
               <View className="flex-row gap-2">
-                <EditDeckDialog
-                  deck={deck}
-                  onDeckUpdated={loadDeck}
-                />
-                <ShareDeckDialog
+                <EditDeckDrawer deck={deck} />
+                <ShareDeckDrawer
                   deckId={deck.id}
                   shares={deck.shares}
-                  onSharesUpdate={loadDeck}
                 />
                 <Button variant="destructive" size="icon" onPress={handleDelete}>
                   <TrashIcon size={20} className="text-white" />
@@ -196,7 +156,7 @@ export default function DeckDetailPage() {
             <Text className="text-sm text-muted-foreground">
               {deck.cards.length} card{deck.cards.length !== 1 ? "s" : ""}
             </Text>
-            <ViewSharesDialog shares={deck.shares} shareCount={deck.shares.length} />
+            <ViewSharesDrawer shares={deck.shares} shareCount={deck.shares.length} />
           </View>
         </View>
 

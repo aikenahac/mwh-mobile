@@ -1,14 +1,14 @@
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -21,48 +21,53 @@ import {
 } from "@/components/ui/select";
 import { Text } from "@/components/ui/text";
 import { Permission, Share } from "@/lib/api/schemas";
-import { createDeckShare, deleteDeckShare, updateDeckShare } from "@/lib/api/shares";
+import { useCreateShare } from "@/hooks/api/shares";
+import { deleteDeckShare, updateDeckShare } from "@/lib/api/shares";
 import { ShareIcon } from "@/lib/icons";
 import { X } from "lucide-react-native";
 import { useState } from "react";
 import { Alert, ScrollView, View } from "react-native";
 
-interface ShareDeckDialogProps {
+interface ShareDeckDrawerProps {
   deckId: string;
   shares: Share[];
-  onSharesUpdate: () => void;
+  onSharesUpdate?: () => void;
 }
 
-export function ShareDeckDialog({ deckId, shares, onSharesUpdate }: ShareDeckDialogProps) {
+export function ShareDeckDrawer({ deckId, shares, onSharesUpdate }: ShareDeckDrawerProps) {
   const [open, setOpen] = useState(false);
   const [username, setUsername] = useState("");
   const [permission, setPermission] = useState<Permission>("view");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // React Query mutation for creating shares
+  const createShareMutation = useCreateShare(deckId);
   const [updatingShareId, setUpdatingShareId] = useState<string | null>(null);
   const [removingShareId, setRemovingShareId] = useState<string | null>(null);
 
-  const handleShare = async () => {
+  const handleShare = () => {
     if (!username.trim()) {
       Alert.alert("Error", "Please enter a username");
       return;
     }
 
-    setIsSubmitting(true);
-    try {
-      await createDeckShare(deckId, {
+    createShareMutation.mutate(
+      {
         username: username.trim(),
         permission,
-      });
-      setUsername("");
-      setPermission("view");
-      setOpen(false);
-      onSharesUpdate();
-    } catch (err) {
-      console.log(err);
-      Alert.alert("Error", err instanceof Error ? err.message : "Failed to share deck");
-    } finally {
-      setIsSubmitting(false);
-    }
+      },
+      {
+        onSuccess: () => {
+          setUsername("");
+          setPermission("view");
+          setOpen(false);
+          onSharesUpdate?.();
+        },
+        onError: (err) => {
+          console.log(err);
+          Alert.alert("Error", err instanceof Error ? err.message : "Failed to share deck");
+        },
+      }
+    );
   };
 
   const handleRemoveShare = async (shareId: string) => {
@@ -78,7 +83,7 @@ export function ShareDeckDialog({ deckId, shares, onSharesUpdate }: ShareDeckDia
             setRemovingShareId(shareId);
             try {
               await deleteDeckShare(deckId, shareId);
-              onSharesUpdate();
+              onSharesUpdate?.();
             } catch (err) {
               Alert.alert("Error", err instanceof Error ? err.message : "Failed to remove share");
             } finally {
@@ -94,7 +99,7 @@ export function ShareDeckDialog({ deckId, shares, onSharesUpdate }: ShareDeckDia
     setUpdatingShareId(shareId);
     try {
       await updateDeckShare(deckId, shareId, { permission: newPermission });
-      onSharesUpdate();
+      onSharesUpdate?.();
     } catch (err) {
       Alert.alert("Error", err instanceof Error ? err.message : "Failed to update permission");
     } finally {
@@ -103,19 +108,19 @@ export function ShareDeckDialog({ deckId, shares, onSharesUpdate }: ShareDeckDia
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
+    <Drawer open={open} onOpenChange={setOpen}>
+      <DrawerTrigger asChild>
         <Button variant="outline" size="icon">
           <ShareIcon size={20} className="text-foreground" />
         </Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Share Deck</DialogTitle>
-          <DialogDescription>
+      </DrawerTrigger>
+      <DrawerContent>
+        <DrawerHeader>
+          <DrawerTitle>Share Deck</DrawerTitle>
+          <DrawerDescription>
             Share this deck with other users by entering their username
-          </DialogDescription>
-        </DialogHeader>
+          </DrawerDescription>
+        </DrawerHeader>
 
         <ScrollView className="max-h-96">
           <View className="gap-4 py-4">
@@ -164,7 +169,7 @@ export function ShareDeckDialog({ deckId, shares, onSharesUpdate }: ShareDeckDia
                   >
                     <View className="flex-1 gap-2">
                       <Text className="text-sm font-medium">
-                        {share.shared_with_user_id}
+                        {share.sharedWithUserId}
                       </Text>
                       <Select
                         value={{
@@ -205,17 +210,17 @@ export function ShareDeckDialog({ deckId, shares, onSharesUpdate }: ShareDeckDia
           </View>
         </ScrollView>
 
-        <DialogFooter>
-          <DialogClose asChild>
+        <DrawerFooter>
+          <DrawerClose asChild>
             <Button variant="outline" onPress={() => setOpen(false)}>
               <Text>Cancel</Text>
             </Button>
-          </DialogClose>
-          <Button onPress={handleShare} disabled={isSubmitting}>
-            <Text>{isSubmitting ? "Sharing..." : "Share"}</Text>
+          </DrawerClose>
+          <Button onPress={handleShare} disabled={createShareMutation.isPending}>
+            <Text>{createShareMutation.isPending ? "Sharing..." : "Share"}</Text>
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </DrawerFooter>
+      </DrawerContent>
+    </Drawer>
   );
 }

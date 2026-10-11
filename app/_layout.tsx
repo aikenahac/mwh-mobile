@@ -1,15 +1,36 @@
-import { ClerkProvider, ClerkLoaded } from '@clerk/clerk-expo';
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import { View } from 'react-native';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
-import * as SecureStore from 'expo-secure-store';
-import 'react-native-reanimated';
+import { ClerkLoaded, ClerkProvider } from "@clerk/clerk-expo";
+import NetInfo from "@react-native-community/netinfo";
+import {
+  DarkTheme,
+  DefaultTheme,
+  ThemeProvider,
+} from "@react-navigation/native";
+import {
+  QueryClient,
+  QueryClientProvider,
+  onlineManager,
+} from "@tanstack/react-query";
+import { Stack } from "expo-router";
+import * as SecureStore from "expo-secure-store";
+import { StatusBar } from "expo-status-bar";
+import { View } from "react-native";
+import "react-native-reanimated";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import "./global.css";
 
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { PortalHost } from '@rn-primitives/portal';
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { PortalHost } from "@rn-primitives/portal";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+
+// Set up online manager for React Query
+onlineManager.setEventListener((setOnline) => {
+  return NetInfo.addEventListener((state) => {
+    setOnline(!!state.isConnected);
+  });
+});
+
+// Create a single QueryClient instance for the entire app
+const queryClient = new QueryClient();
 
 // Token cache for Clerk
 const tokenCache = {
@@ -30,14 +51,14 @@ const tokenCache = {
 };
 
 export const unstable_settings = {
-  anchor: '(tabs)',
+  anchor: "(tabs)",
 };
 
 const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
 
 if (!publishableKey) {
   throw new Error(
-    'Missing Publishable Key. Please set EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY in your .env'
+    "Missing Publishable Key. Please set EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY in your .env",
   );
 }
 
@@ -45,22 +66,40 @@ export default function RootLayout() {
   const colorScheme = useColorScheme();
 
   return (
-    <SafeAreaProvider>
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <View className={`flex-1 ${colorScheme === 'dark' ? 'dark' : ''}`}>
-          <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
-            <ClerkLoaded>
-              <Stack>
-                <Stack.Screen name="(home)" options={{ headerShown: false }} />
-                <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-                <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-              </Stack>
-              <StatusBar style="auto" />
-              <PortalHost />
-            </ClerkLoaded>
-          </ClerkProvider>
-        </View>
-      </ThemeProvider>
+    <SafeAreaProvider style={{ flex: 1 }}>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <ThemeProvider
+          value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
+        >
+          <QueryClientProvider client={queryClient}>
+            <View className={`flex-1 bg-background ${colorScheme === "dark" ? "dark" : ""}`}>
+              <ClerkProvider
+                publishableKey={publishableKey}
+                tokenCache={tokenCache}
+              >
+                <ClerkLoaded>
+                  <Stack>
+                    <Stack.Screen
+                      name="(home)"
+                      options={{ headerShown: false }}
+                    />
+                    <Stack.Screen
+                      name="(auth)"
+                      options={{ headerShown: false }}
+                    />
+                    <Stack.Screen
+                      name="modal"
+                      options={{ presentation: "modal", title: "Modal" }}
+                    />
+                  </Stack>
+                  <StatusBar style="auto" />
+                  <PortalHost />
+                </ClerkLoaded>
+              </ClerkProvider>
+            </View>
+          </QueryClientProvider>
+        </ThemeProvider>
+      </GestureHandlerRootView>
     </SafeAreaProvider>
   );
 }

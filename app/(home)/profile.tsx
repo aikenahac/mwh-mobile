@@ -1,5 +1,5 @@
+import { EditProfileDrawer } from '@/components/edit-profile-drawer'
 import { SignOutButton } from '@/components/sign-out-button'
-import { EditProfileDialog } from '@/components/edit-profile-dialog'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Text } from '@/components/ui/text'
 import { BOTTOM_PADDING_OFFSET } from '@/lib/constants'
@@ -118,7 +118,7 @@ export default function ProfilePage() {
                 <CardTitle>Account Information</CardTitle>
                 <CardDescription>Your account details</CardDescription>
               </View>
-              <EditProfileDialog />
+              <EditProfileDrawer />
             </View>
           </CardHeader>
           <CardContent className="gap-4">

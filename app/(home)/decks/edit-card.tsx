@@ -3,10 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Text } from "@/components/ui/text";
-import { createCard, deleteCard, updateCard } from "@/lib/api/cards";
 import { useApiClient } from "@/lib/api/client";
 import type { CardType } from "@/lib/api/schemas";
 import { BOTTOM_PADDING_OFFSET } from "@/lib/constants";
+import { useCreateCard, useUpdateCard, useDeleteCard } from "@/hooks/api/cards";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { Alert, ScrollView, View } from "react-native";
@@ -35,9 +35,14 @@ export default function EditCardPage() {
   const [customPickValue, setCustomPickValue] = useState(
     pick > 4 ? pick.toString() : "5"
   );
-  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // React Query mutations
+  const createCardMutation = useCreateCard();
+  const updateCardMutation = useUpdateCard(params.cardId || '', params.deckId);
+  const deleteCardMutation = useDeleteCard(params.cardId || '', params.deckId);
 
   const isCustomPick = pick > 4;
+  const isSubmitting = createCardMutation.isPending || updateCardMutation.isPending || deleteCardMutation.isPending;
 
   useEffect(() => {
     if (params.cardText) setText(params.cardText);
@@ -45,45 +50,59 @@ export default function EditCardPage() {
     if (params.cardPick) setPick(parseInt(params.cardPick, 10));
   }, [params]);
 
-  const handleSave = async () => {
+  const handleSave = () => {
     if (!text.trim()) {
       Alert.alert("Validation Error", "Card text is required");
       return;
     }
 
-    try {
-      setIsSubmitting(true);
-
-      if (isEditing) {
-        await updateCard(params.cardId!, {
+    if (isEditing) {
+      updateCardMutation.mutate(
+        {
           text: text.trim(),
           type,
           pick,
-        });
-        Alert.alert("Success", "Card updated successfully");
-      } else {
-        await createCard({
+        },
+        {
+          onSuccess: () => {
+            Alert.alert("Success", "Card updated successfully");
+            router.back();
+          },
+          onError: (error) => {
+            console.error("Failed to update card:", error);
+            Alert.alert(
+              "Error",
+              error instanceof Error ? error.message : "Failed to update card"
+            );
+          },
+        }
+      );
+    } else {
+      createCardMutation.mutate(
+        {
           text: text.trim(),
           type,
           pick,
           deckId: params.deckId,
-        });
-        Alert.alert("Success", "Card created successfully");
-      }
-
-      router.back();
-    } catch (error) {
-      console.error("Failed to save card:", error);
-      Alert.alert(
-        "Error",
-        error instanceof Error ? error.message : "Failed to save card"
+        },
+        {
+          onSuccess: () => {
+            Alert.alert("Success", "Card created successfully");
+            router.back();
+          },
+          onError: (error) => {
+            console.error("Failed to create card:", error);
+            Alert.alert(
+              "Error",
+              error instanceof Error ? error.message : "Failed to create card"
+            );
+          },
+        }
       );
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!params.cardId) return;
 
     Alert.alert(
@@ -97,21 +116,20 @@ export default function EditCardPage() {
         {
           text: "Delete",
           style: "destructive",
-          onPress: async () => {
-            try {
-              setIsSubmitting(true);
-              await deleteCard(params.cardId!);
-              Alert.alert("Success", "Card deleted successfully");
-              router.back();
-            } catch (error) {
-              console.error("Failed to delete card:", error);
-              Alert.alert(
-                "Error",
-                error instanceof Error ? error.message : "Failed to delete card"
-              );
-            } finally {
-              setIsSubmitting(false);
-            }
+          onPress: () => {
+            deleteCardMutation.mutate(undefined, {
+              onSuccess: () => {
+                Alert.alert("Success", "Card deleted successfully");
+                router.back();
+              },
+              onError: (error) => {
+                console.error("Failed to delete card:", error);
+                Alert.alert(
+                  "Error",
+                  error instanceof Error ? error.message : "Failed to delete card"
+                );
+              },
+            });
           },
         },
       ]

@@ -4,15 +4,15 @@ import { useState } from 'react';
 import { Alert, View } from 'react-native';
 import { Button } from './ui/button';
 import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from './ui/dialog';
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from './ui/drawer';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Text } from './ui/text';
@@ -22,7 +22,7 @@ type Props = {
   onOpenChange?: (open: boolean) => void;
 };
 
-export function EditProfileDialog({ open, onOpenChange }: Props) {
+export function EditProfileDrawer({ open, onOpenChange }: Props) {
   const { user } = useUser();
   const [firstName, setFirstName] = useState(user?.firstName || '');
   const [lastName, setLastName] = useState(user?.lastName || '');
@@ -57,19 +57,19 @@ export function EditProfileDialog({ open, onOpenChange }: Props) {
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogTrigger asChild>
+    <Drawer open={open} onOpenChange={onOpenChange}>
+      <DrawerTrigger asChild>
         <Button variant="outline" size="icon">
           <PencilIcon size={20} className="text-foreground" />
         </Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Edit Profile</DialogTitle>
-          <DialogDescription>
+      </DrawerTrigger>
+      <DrawerContent>
+        <DrawerHeader>
+          <DrawerTitle>Edit Profile</DrawerTitle>
+          <DrawerDescription>
             Update your profile information
-          </DialogDescription>
-        </DialogHeader>
+          </DrawerDescription>
+        </DrawerHeader>
         <View className="gap-4 py-4">
           <View className="gap-2">
             <Label nativeID="firstName">First Name</Label>
@@ -99,19 +99,19 @@ export function EditProfileDialog({ open, onOpenChange }: Props) {
             />
           </View>
         </View>
-        <DialogFooter>
-          <DialogClose asChild>
+        <DrawerFooter>
+          <DrawerClose asChild>
             <Button variant="outline" onPress={handleCancel}>
               <Text>Cancel</Text>
             </Button>
-          </DialogClose>
-          <DialogClose asChild>
+          </DrawerClose>
+          <DrawerClose asChild>
             <Button onPress={handleUpdateProfile} disabled={updating}>
               <Text>{updating ? 'Saving...' : 'Save'}</Text>
             </Button>
-          </DialogClose>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          </DrawerClose>
+        </DrawerFooter>
+      </DrawerContent>
+    </Drawer>
   );
 }

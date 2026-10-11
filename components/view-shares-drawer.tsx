@@ -2,13 +2,13 @@ import { useState, useEffect } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { Button } from './ui/button';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from './ui/dialog';
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from './ui/drawer';
 import { Text } from './ui/text';
 import type { Share } from '@/lib/api/schemas';
 import { useUser as useClerkUser } from '@clerk/clerk-expo';
@@ -25,25 +25,25 @@ function useUserInfo(userId: string) {
   return { username: userId, loading: false };
 }
 
-export function ViewSharesDialog({ shares, shareCount }: Props) {
+export function ViewSharesDrawer({ shares, shareCount }: Props) {
   if (shareCount === 0) return null;
 
   return (
-    <Dialog>
-      <DialogTrigger asChild>
+    <Drawer>
+      <DrawerTrigger asChild>
         <Button variant="ghost" size="sm" className="h-auto p-0">
           <Text className="text-sm text-muted-foreground underline">
             Shared with {shareCount} {shareCount === 1 ? 'person' : 'people'}
           </Text>
         </Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Shared With</DialogTitle>
-          <DialogDescription>
+      </DrawerTrigger>
+      <DrawerContent>
+        <DrawerHeader>
+          <DrawerTitle>Shared With</DrawerTitle>
+          <DrawerDescription>
             Users who have access to this deck
-          </DialogDescription>
-        </DialogHeader>
+          </DrawerDescription>
+        </DrawerHeader>
         <View className="gap-3 py-4">
           {shares.length === 0 ? (
             <Text className="text-muted-foreground text-center">
@@ -67,7 +67,7 @@ export function ViewSharesDialog({ shares, shareCount }: Props) {
             ))
           )}
         </View>
-      </DialogContent>
-    </Dialog>
+      </DrawerContent>
+    </Drawer>
   );
 }

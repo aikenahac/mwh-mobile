@@ -23,7 +23,7 @@ export function MWHCard({ creator, card, onPress }: Props) {
     >
       <Text
         className={cn(
-          'text-lg font-extrabold',
+          'text-sm font-extrabold',
           card.type === 'white' ? 'text-black' : 'text-white'
         )}
       >
@@ -33,7 +33,7 @@ export function MWHCard({ creator, card, onPress }: Props) {
       <View className="flex flex-row items-center justify-between gap-2">
         <Text
           className={cn(
-            'text-xs font-bold',
+            'text-[8px] font-bold',
             card.type === 'white' ? 'text-black' : 'text-white'
           )}
         >
@@ -42,7 +42,7 @@ export function MWHCard({ creator, card, onPress }: Props) {
         {card.type === 'black' && card.pick && card.pick > 1 && (
           <View className="flex flex-row items-center gap-1">
             <Text className="font-bold text-white text-xs">PICK</Text>
-            <View className="rounded-full h-6 w-6 bg-white flex items-center justify-center">
+            <View className="rounded-full h-4 w-4 bg-white flex items-center justify-center">
               <Text className="text-black font-bold text-xs">{card.pick}</Text>
             </View>
           </View>

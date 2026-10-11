@@ -1,18 +1,18 @@
 import type { Deck } from '@/lib/api';
-import { createDeck } from '@/lib/api';
+import { useCreateDeck } from '@/hooks/api/decks';
 import { useState } from 'react';
 import { Alert, View } from 'react-native';
 import { Button } from './ui/button';
 import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from './ui/dialog';
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from './ui/drawer';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Text } from './ui/text';
@@ -23,32 +23,34 @@ type Props = {
   onDeckCreated?: (deck: Deck) => void;
 };
 
-export function CreateDeckDialog({ open, onOpenChange, onDeckCreated }: Props) {
+export function CreateDeckDrawer({ open, onOpenChange, onDeckCreated }: Props) {
   const [newDeckName, setNewDeckName] = useState('');
   const [newDeckDescription, setNewDeckDescription] = useState('');
-  const [creating, setCreating] = useState(false);
+  const createDeckMutation = useCreateDeck();
 
-  async function handleCreateDeck() {
+  function handleCreateDeck() {
     if (!newDeckName.trim()) {
       Alert.alert('Error', 'Please enter a deck name');
       return;
     }
 
-    try {
-      setCreating(true);
-      const newDeck = await createDeck({
+    createDeckMutation.mutate(
+      {
         name: newDeckName,
         description: newDeckDescription || undefined,
-      });
-      setNewDeckName('');
-      setNewDeckDescription('');
-      onDeckCreated?.(newDeck);
-      onOpenChange?.(false);
-    } catch (err) {
-      Alert.alert('Error', err instanceof Error ? err.message : 'Failed to create deck');
-    } finally {
-      setCreating(false);
-    }
+      },
+      {
+        onSuccess: (newDeck) => {
+          setNewDeckName('');
+          setNewDeckDescription('');
+          onDeckCreated?.(newDeck);
+          onOpenChange?.(false);
+        },
+        onError: (err) => {
+          Alert.alert('Error', err instanceof Error ? err.message : 'Failed to create deck');
+        },
+      }
+    );
   }
 
   function handleCancel() {
@@ -58,19 +60,19 @@ export function CreateDeckDialog({ open, onOpenChange, onDeckCreated }: Props) {
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogTrigger asChild>
+    <Drawer open={open} onOpenChange={onOpenChange}>
+      <DrawerTrigger asChild>
         <Button size="lg">
           <Text>New Deck</Text>
         </Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Create New Deck</DialogTitle>
-          <DialogDescription>
+      </DrawerTrigger>
+      <DrawerContent>
+        <DrawerHeader>
+          <DrawerTitle>Create New Deck</DrawerTitle>
+          <DrawerDescription>
             Create a new deck to organize your cards
-          </DialogDescription>
-        </DialogHeader>
+          </DrawerDescription>
+        </DrawerHeader>
         <View className="gap-4 py-4">
           <View className="gap-2">
             <Label nativeID="name">Deck Name</Label>
@@ -94,19 +96,19 @@ export function CreateDeckDialog({ open, onOpenChange, onDeckCreated }: Props) {
             />
           </View>
         </View>
-        <DialogFooter>
-          <DialogClose asChild>
+        <DrawerFooter>
+          <DrawerClose asChild>
             <Button variant="outline" onPress={handleCancel}>
               <Text>Cancel</Text>
             </Button>
-          </DialogClose>
-          <DialogClose asChild>
-            <Button onPress={handleCreateDeck} disabled={creating}>
-              <Text>{creating ? 'Creating...' : 'Create'}</Text>
+          </DrawerClose>
+          <DrawerClose asChild>
+            <Button onPress={handleCreateDeck} disabled={createDeckMutation.isPending}>
+              <Text>{createDeckMutation.isPending ? 'Creating...' : 'Create'}</Text>
             </Button>
-          </DialogClose>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          </DrawerClose>
+        </DrawerFooter>
+      </DrawerContent>
+    </Drawer>
   );
 }

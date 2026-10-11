@@ -1,19 +1,19 @@
-import { updateDeck } from '@/lib/api/decks';
 import type { DeckWithRelations } from '@/lib/api/schemas';
 import { PencilIcon } from '@/lib/icons';
+import { useUpdateDeck } from '@/hooks/api/decks';
 import { useEffect, useState } from 'react';
 import { Alert, View } from 'react-native';
 import { Button } from './ui/button';
 import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from './ui/dialog';
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from './ui/drawer';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Text } from './ui/text';
@@ -25,10 +25,10 @@ type Props = {
   onDeckUpdated?: () => void;
 };
 
-export function EditDeckDialog({ deck, open, onOpenChange, onDeckUpdated }: Props) {
+export function EditDeckDrawer({ deck, open, onOpenChange, onDeckUpdated }: Props) {
   const [editName, setEditName] = useState('');
   const [editDescription, setEditDescription] = useState('');
-  const [saving, setSaving] = useState(false);
+  const updateDeckMutation = useUpdateDeck(deck?.id || '');
 
   useEffect(() => {
     if (deck) {
@@ -37,25 +37,27 @@ export function EditDeckDialog({ deck, open, onOpenChange, onDeckUpdated }: Prop
     }
   }, [deck]);
 
-  async function handleSave() {
+  function handleSave() {
     if (!deck) return;
 
-    try {
-      setSaving(true);
-      await updateDeck(deck.id, {
+    updateDeckMutation.mutate(
+      {
         name: editName,
         description: editDescription || undefined,
-      });
-      onDeckUpdated?.();
-      onOpenChange?.(false);
-    } catch (err) {
-      Alert.alert(
-        'Error',
-        err instanceof Error ? err.message : 'Failed to update deck'
-      );
-    } finally {
-      setSaving(false);
-    }
+      },
+      {
+        onSuccess: () => {
+          onDeckUpdated?.();
+          onOpenChange?.(false);
+        },
+        onError: (err) => {
+          Alert.alert(
+            'Error',
+            err instanceof Error ? err.message : 'Failed to update deck'
+          );
+        },
+      }
+    );
   }
 
   function handleCancel() {
@@ -67,19 +69,19 @@ export function EditDeckDialog({ deck, open, onOpenChange, onDeckUpdated }: Prop
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogTrigger asChild>
+    <Drawer open={open} onOpenChange={onOpenChange}>
+      <DrawerTrigger asChild>
         <Button variant="outline" size="icon">
           <PencilIcon size={20} className="text-foreground" />
         </Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Edit Deck</DialogTitle>
-          <DialogDescription>
+      </DrawerTrigger>
+      <DrawerContent>
+        <DrawerHeader>
+          <DrawerTitle>Edit Deck</DrawerTitle>
+          <DrawerDescription>
             Update your deck&apos;s name and description
-          </DialogDescription>
-        </DialogHeader>
+          </DrawerDescription>
+        </DrawerHeader>
         <View className="gap-4 py-4">
           <View className="gap-2">
             <Label nativeID="name">Deck Name</Label>
@@ -103,19 +105,19 @@ export function EditDeckDialog({ deck, open, onOpenChange, onDeckUpdated }: Prop
             />
           </View>
         </View>
-        <DialogFooter>
-          <DialogClose asChild>
+        <DrawerFooter>
+          <DrawerClose asChild>
             <Button variant="outline" onPress={handleCancel}>
               <Text>Cancel</Text>
             </Button>
-          </DialogClose>
-          <DialogClose asChild>
-            <Button onPress={handleSave} disabled={saving}>
-              <Text>{saving ? 'Saving...' : 'Save'}</Text>
+          </DrawerClose>
+          <DrawerClose asChild>
+            <Button onPress={handleSave} disabled={updateDeckMutation.isPending}>
+              <Text>{updateDeckMutation.isPending ? 'Saving...' : 'Save'}</Text>
             </Button>
-          </DialogClose>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          </DrawerClose>
+        </DrawerFooter>
+      </DrawerContent>
+    </Drawer>
   );
 }

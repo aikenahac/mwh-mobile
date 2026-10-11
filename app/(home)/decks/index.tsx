@@ -1,13 +1,13 @@
-import { CreateDeckDialog } from '@/components/create-deck-dialog'
+import { CreateDeckDrawer } from '@/components/create-deck-drawer'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Text } from '@/components/ui/text'
-import { getDecks, type Deck, type DeckWithRelations } from '@/lib/api'
+import { useDecks } from '@/hooks/api/decks'
+import { type Deck } from '@/lib/api'
 import { useApiClient } from '@/lib/api/client'
 import { BOTTOM_PADDING_OFFSET } from '@/lib/constants'
 import * as Haptics from 'expo-haptics'
-import { useFocusEffect, useRouter } from 'expo-router'
-import { useCallback, useState } from 'react'
+import { useRouter } from 'expo-router'
 import { ActivityIndicator, Pressable, ScrollView, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
@@ -17,33 +17,12 @@ export default function DecksPage() {
 
   const router = useRouter()
   const insets = useSafeAreaInsets()
-  const [decks, setDecks] = useState<DeckWithRelations[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
 
-  // Reload decks when the screen comes into focus
-  useFocusEffect(
-    useCallback(() => {
-      loadDecks()
-    }, [])
-  )
-
-  async function loadDecks() {
-    try {
-      setLoading(true)
-      setError(null)
-      const data = await getDecks()
-      setDecks(data)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load decks')
-    } finally {
-      setLoading(false)
-    }
-  }
+  // Use React Query to fetch decks
+  const { data: decks = [], isLoading: loading, error, refetch } = useDecks()
 
   function handleDeckCreated(newDeck: Deck) {
-    // Reload the decks list and navigate to the new deck
-    loadDecks()
+    // Navigate to the new deck (React Query will auto-update the list)
     router.push(`/(home)/decks/${newDeck.id}`)
   }
 
@@ -62,10 +41,12 @@ export default function DecksPage() {
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle>Error</CardTitle>
-            <CardDescription>{error}</CardDescription>
+            <CardDescription>
+              {error instanceof Error ? error.message : 'Failed to load decks'}
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button onPress={loadDecks} className="w-full">
+            <Button onPress={() => refetch()} className="w-full">
               <Text>Retry</Text>
             </Button>
           </CardContent>
@@ -87,7 +68,7 @@ export default function DecksPage() {
               {decks.length} {decks.length === 1 ? 'deck' : 'decks'}
             </Text>
           </View>
-          <CreateDeckDialog onDeckCreated={handleDeckCreated} />
+          <CreateDeckDrawer onDeckCreated={handleDeckCreated} />
         </View>
 
         {decks.length === 0 ? (
